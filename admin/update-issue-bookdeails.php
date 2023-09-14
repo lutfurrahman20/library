@@ -8,26 +8,22 @@ header('location:index.php');
 }
 else{ 
 
-if(isset($_POST['issue']))
+if(isset($_POST['return']))
 {
-$studentid=strtoupper($_POST['studentid']);
-$bookid=$_POST['bookdetails'];
-$sql="INSERT INTO  tblissuedbookdetails(StudentID,BookId) VALUES(:studentid,:bookid)";
+$rid=intval($_GET['rid']);
+$fine=$_POST['fine'];
+$rstatus=1;
+$sql="update tblissuedbookdetails set fine=:fine,RetrunStatus=:rstatus where id=:rid";
 $query = $dbh->prepare($sql);
-$query->bindParam(':studentid',$studentid,PDO::PARAM_STR);
-$query->bindParam(':bookid',$bookid,PDO::PARAM_STR);
+$query->bindParam(':rid',$rid,PDO::PARAM_STR);
+$query->bindParam(':fine',$fine,PDO::PARAM_STR);
+$query->bindParam(':rstatus',$rstatus,PDO::PARAM_STR);
 $query->execute();
-$lastInsertId = $dbh->lastInsertId();
-if($lastInsertId)
-{
-$_SESSION['msg']="Book issued successfully";
+
+$_SESSION['msg']="Book Returned successfully";
 header('location:manage-issued-books.php');
-}
-else 
-{
-$_SESSION['error']="Something went wrong. Please try again";
-header('location:manage-issued-books.php');
-}
+
+
 
 }
 ?>
@@ -38,7 +34,7 @@ header('location:manage-issued-books.php');
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <meta name="description" content="" />
     <meta name="author" content="" />
-    <title>Online Library Management System | Issue a new Book</title>
+    <title>Online Library Management System | Issued Book Details</title>
     <!-- BOOTSTRAP CORE STYLE  -->
     <link href="assets/css/bootstrap.css" rel="stylesheet" />
     <!-- FONT AWESOME STYLE  -->
@@ -97,7 +93,7 @@ error:function (){}
          <div class="container">
         <div class="row pad-botm">
             <div class="col-md-12">
-                <h4 class="header-line">Issue a New Book</h4>
+                <h4 class="header-line">Issued Book Details</h4>
                 
                             </div>
 
@@ -106,37 +102,80 @@ error:function (){}
 <div class="col-md-10 col-sm-6 col-xs-12 col-md-offset-1"">
 <div class="panel panel-info">
 <div class="panel-heading">
-Issue a New Book
+Issued Book Details
 </div>
 <div class="panel-body">
 <form role="form" method="post">
+<?php 
+$rid=intval($_GET['rid']);
+$sql = "SELECT tblstudents.FullName,tblbooks.BookName,tblbooks.ISBNNumber,tblissuedbookdetails.IssuesDate,tblissuedbookdetails.ReturnDate,tblissuedbookdetails.id as rid,tblissuedbookdetails.fine,tblissuedbookdetails.RetrunStatus from  tblissuedbookdetails join tblstudents on tblstudents.StudentId=tblissuedbookdetails.StudentId join tblbooks on tblbooks.id=tblissuedbookdetails.BookId where tblissuedbookdetails.id=:rid";
+$query = $dbh -> prepare($sql);
+$query->bindParam(':rid',$rid,PDO::PARAM_STR);
+$query->execute();
+$results=$query->fetchAll(PDO::FETCH_OBJ);
+$cnt=1;
+if($query->rowCount() > 0)
+{
+foreach($results as $result)
+{               ?>                                      
+                   
+
+
 
 <div class="form-group">
-<label>Student id<span style="color:red;">*</span></label>
-<input class="form-control" type="text" name="studentid" id="studentid" onBlur="getstudent()" autocomplete="off"  required />
+<label>Student Name :</label>
+<?php echo htmlentities($result->FullName);?>
 </div>
 
 <div class="form-group">
-<span id="get_student_name" style="font-size:16px;"></span> 
+<label>Book Name :</label>
+<?php echo htmlentities($result->BookName);?>
 </div>
-
-
-
 
 
 <div class="form-group">
-<label>ISBN Number or Book Title<span style="color:red;">*</span></label>
-<input class="form-control" type="text" name="booikid" id="bookid" onBlur="getbook()"  required="required" />
+<label>ISBN :</label>
+<?php echo htmlentities($result->ISBNNumber);?>
 </div>
 
- <div class="form-group">
+<div class="form-group">
+<label>Book Issued Date :</label>
+<?php echo htmlentities($result->IssuesDate);?>
+</div>
 
-  <select  class="form-control" name="bookdetails" id="get_book_name" readonly>
-   
- </select>
+
+<div class="form-group">
+<label>Book Returned Date :</label>
+<?php if($result->ReturnDate=="")
+                                            {
+                                                echo htmlentities("Not Return Yet");
+                                            } else {
+
+
+                                            echo htmlentities($result->ReturnDate);
+}
+                                            ?>
+</div>
+
+<div class="form-group">
+<label>Fine (in USD) :</label>
+<?php 
+if($result->fine=="")
+{?>
+<input class="form-control" type="text" name="fine" id="fine"  required />
+
+<?php }else {
+echo htmlentities($result->fine);
+}
+?>
+</div>
+ <?php if($result->RetrunStatus==0){?>
+
+<button type="submit" name="return" id="submit" class="btn btn-info">Return Book </button>
+
  </div>
-<button type="submit" name="issue" id="submit" class="btn btn-info">Issue Book </button>
 
+<?php }}} ?>
                                     </form>
                             </div>
                         </div>

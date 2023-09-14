@@ -8,26 +8,20 @@ header('location:index.php');
 }
 else{ 
 
-if(isset($_POST['issue']))
+if(isset($_POST['update']))
 {
-$studentid=strtoupper($_POST['studentid']);
-$bookid=$_POST['bookdetails'];
-$sql="INSERT INTO  tblissuedbookdetails(StudentID,BookId) VALUES(:studentid,:bookid)";
+$category=$_POST['category'];
+$status=$_POST['status'];
+$catid=intval($_GET['catid']);
+$sql="update  tblcategory set CategoryName=:category,Status=:status where id=:catid";
 $query = $dbh->prepare($sql);
-$query->bindParam(':studentid',$studentid,PDO::PARAM_STR);
-$query->bindParam(':bookid',$bookid,PDO::PARAM_STR);
+$query->bindParam(':category',$category,PDO::PARAM_STR);
+$query->bindParam(':status',$status,PDO::PARAM_STR);
+$query->bindParam(':catid',$catid,PDO::PARAM_STR);
 $query->execute();
-$lastInsertId = $dbh->lastInsertId();
-if($lastInsertId)
-{
-$_SESSION['msg']="Book issued successfully";
-header('location:manage-issued-books.php');
-}
-else 
-{
-$_SESSION['error']="Something went wrong. Please try again";
-header('location:manage-issued-books.php');
-}
+$_SESSION['updatemsg']="Brand updated successfully";
+header('location:manage-categories.php');
+
 
 }
 ?>
@@ -38,7 +32,7 @@ header('location:manage-issued-books.php');
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <meta name="description" content="" />
     <meta name="author" content="" />
-    <title>Online Library Management System | Issue a new Book</title>
+    <title>Online Library Management System | Edit Categories</title>
     <!-- BOOTSTRAP CORE STYLE  -->
     <link href="assets/css/bootstrap.css" rel="stylesheet" />
     <!-- FONT AWESOME STYLE  -->
@@ -47,45 +41,6 @@ header('location:manage-issued-books.php');
     <link href="assets/css/style.css" rel="stylesheet" />
     <!-- GOOGLE FONT -->
     <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css' />
-<script>
-// function for get student name
-function getstudent() {
-$("#loaderIcon").show();
-jQuery.ajax({
-url: "get_student.php",
-data:'studentid='+$("#studentid").val(),
-type: "POST",
-success:function(data){
-$("#get_student_name").html(data);
-$("#loaderIcon").hide();
-},
-error:function (){}
-});
-}
-
-//function for book details
-function getbook() {
-$("#loaderIcon").show();
-jQuery.ajax({
-url: "get_book.php",
-data:'bookid='+$("#bookid").val(),
-type: "POST",
-success:function(data){
-$("#get_book_name").html(data);
-$("#loaderIcon").hide();
-},
-error:function (){}
-});
-}
-
-</script> 
-<style type="text/css">
-  .others{
-    color:red;
-}
-
-</style>
-
 
 </head>
 <body>
@@ -97,45 +52,64 @@ error:function (){}
          <div class="container">
         <div class="row pad-botm">
             <div class="col-md-12">
-                <h4 class="header-line">Issue a New Book</h4>
+                <h4 class="header-line">Edit category</h4>
                 
                             </div>
 
 </div>
 <div class="row">
-<div class="col-md-10 col-sm-6 col-xs-12 col-md-offset-1"">
+<div class="col-md-6 col-sm-6 col-xs-12 col-md-offset-3"">
 <div class="panel panel-info">
 <div class="panel-heading">
-Issue a New Book
+Category Info
 </div>
+ 
 <div class="panel-body">
 <form role="form" method="post">
-
+<?php 
+$catid=intval($_GET['catid']);
+$sql="SELECT * from tblcategory where id=:catid";
+$query=$dbh->prepare($sql);
+$query-> bindParam(':catid',$catid, PDO::PARAM_STR);
+$query->execute();
+$results=$query->fetchAll(PDO::FETCH_OBJ);
+if($query->rowCount() > 0)
+{
+foreach($results as $result)
+{               
+  ?> 
 <div class="form-group">
-<label>Student id<span style="color:red;">*</span></label>
-<input class="form-control" type="text" name="studentid" id="studentid" onBlur="getstudent()" autocomplete="off"  required />
+<label>Category Name</label>
+<input class="form-control" type="text" name="category" value="<?php echo htmlentities($result->CategoryName);?>" required />
 </div>
-
 <div class="form-group">
-<span id="get_student_name" style="font-size:16px;"></span> 
+<label>Status</label>
+<?php if($result->Status==1) {?>
+ <div class="radio">
+<label>
+<input type="radio" name="status" id="status" value="1" checked="checked">Active
+</label>
 </div>
-
-
-
-
-
-<div class="form-group">
-<label>ISBN Number or Book Title<span style="color:red;">*</span></label>
-<input class="form-control" type="text" name="booikid" id="bookid" onBlur="getbook()"  required="required" />
+<div class="radio">
+<label>
+<input type="radio" name="status" id="status" value="0">Inactive
+</label>
 </div>
-
- <div class="form-group">
-
-  <select  class="form-control" name="bookdetails" id="get_book_name" readonly>
-   
- </select>
- </div>
-<button type="submit" name="issue" id="submit" class="btn btn-info">Issue Book </button>
+<?php } else { ?>
+<div class="radio">
+<label>
+<input type="radio" name="status" id="status" value="0" checked="checked">Inactive
+</label>
+</div>
+ <div class="radio">
+<label>
+<input type="radio" name="status" id="status" value="1">Active
+</label>
+</div
+<?php } ?>
+</div>
+<?php }} ?>
+<button type="submit" name="update" class="btn btn-info">Update </button>
 
                                     </form>
                             </div>
@@ -156,7 +130,6 @@ Issue a New Book
     <script src="assets/js/bootstrap.js"></script>
       <!-- CUSTOM SCRIPTS  -->
     <script src="assets/js/custom.js"></script>
-
 </body>
 </html>
 <?php } ?>
